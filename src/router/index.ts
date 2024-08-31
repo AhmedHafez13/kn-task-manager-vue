@@ -1,10 +1,11 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router/auto';
 import { setupLayouts } from 'virtual:generated-layouts';
-import tasksRoutes from '@/modules/tasks/tasks.routes';
+import homeRoutes from '@/modules/home/home.routes';
 import authRoutes from '@/modules/auth/auth.routes';
+import tasksRoutes from '@/modules/tasks/tasks.routes';
 
-const routes = [...tasksRoutes, ...authRoutes];
+const routes = [...tasksRoutes, ...authRoutes, ...homeRoutes];
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
