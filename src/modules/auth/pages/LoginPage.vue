@@ -1,10 +1,60 @@
 <script setup lang="ts">
+import STORAGE_KEYS from '@/const/storage-keys';
+import AuthService from '@/sevices/auth.service';
+import AppStorage from '@/utils/app.storage';
+import { useAppToaster } from '@/utils/app.toaster';
+import $v from '@/utils/app.validations';
+import { useRouter } from 'vue-router';
+import { VForm } from 'vuetify/components';
+
+const loginForm: Ref<VForm | null> = ref(null);
+const isLoading = ref(false);
+const isPasswordVisible = ref(false);
+
 const form = ref({
   email: '',
   password: '',
 });
 
-const isPasswordVisible = ref(false);
+// ----- Services ----- //
+
+const router = useRouter();
+const toaster = useAppToaster();
+
+// ----- Submit Form ----- //
+
+const onSubmit = async () => {
+  isLoading.value = true;
+  if (loginForm.value) {
+    try {
+      const { valid } = await loginForm.value.validate();
+
+      if (valid) {
+        const res = await AuthService.login(form.value);
+        if (res.user) {
+          AppStorage.setData(STORAGE_KEYS.USER, res.user);
+          router.push({ name: 'tasks' });
+        }
+      }
+    } catch (error) {
+      toaster.error(error);
+    }
+  }
+  isLoading.value = false;
+};
+
+// ----- Validation Rules ----- //
+
+const validationRules = computed(() => ({
+  email: [
+    (v: string) => $v.required(v) || 'Email is required',
+    (v: string) => $v.isEmail(v) || 'Not a valid email',
+  ],
+  password: [
+    (v: string) => $v.required(v) || 'Password is required',
+    (v: string) => $v.minLength(v, 6) || 'Password is too short',
+  ],
+}));
 </script>
 
 <template>
@@ -16,11 +66,22 @@ const isPasswordVisible = ref(false);
       </VCardText>
 
       <VCardText>
-        <VForm @submit.prevent="() => {}">
+        <VForm
+          ref="loginForm"
+          @submit.prevent="onSubmit"
+          validate-on="invalid-input"
+          :disabled="isLoading"
+        >
           <VRow>
             <!-- email -->
             <VCol cols="12">
-              <VTextField v-model="form.email" label="Email" type="email" />
+              <VTextField
+                v-model="form.email"
+                label="Email"
+                type="email"
+                :rules="validationRules.email"
+                :disabled="isLoading"
+              />
             </VCol>
 
             <!-- password -->
@@ -28,14 +89,24 @@ const isPasswordVisible = ref(false);
               <VTextField
                 v-model="form.password"
                 label="Password"
+                :rules="validationRules.password"
                 :type="isPasswordVisible ? 'text' : 'password'"
                 :append-inner-icon="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                 @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                :disabled="isLoading"
               />
             </VCol>
 
             <!-- submit button -->
-            <VBtn block type="submit" to="/" class="my-6">Login</VBtn>
+            <VBtn
+              block
+              type="submit"
+              class="my-6"
+              :disabled="isLoading"
+              :loading="isLoading"
+              text="Login"
+              color="primary"
+            />
 
             <!-- create account -->
             <VCol cols="12" class="text-center text-base">

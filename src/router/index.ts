@@ -4,6 +4,8 @@ import { setupLayouts } from 'virtual:generated-layouts';
 import homeRoutes from '@/modules/home/home.routes';
 import authRoutes from '@/modules/auth/auth.routes';
 import tasksRoutes from '@/modules/tasks/tasks.routes';
+import AppStorage from '@/utils/app.storage';
+import STORAGE_KEYS from '@/const/storage-keys';
 
 const routes = [...tasksRoutes, ...authRoutes, ...homeRoutes];
 
@@ -29,6 +31,27 @@ router.onError((err, to) => {
 
 router.isReady().then(() => {
   localStorage.removeItem('vuetify:dynamic-reload');
+});
+
+router.beforeEach((to, _from, next) => {
+  const hadUserData = AppStorage.hasKey(STORAGE_KEYS.USER);
+
+  // If the user is already authenticated redirect to home if targets `login` page
+  if ((to.name === 'login' || to.name === 'register') && hadUserData) {
+    next({ path: '/' });
+  }
+
+  // Check if the route requires authentication
+  // redirect to `login` if user is not authenticated
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    if (hadUserData) {
+      next();
+    } else {
+      next({ name: 'login' });
+    }
+  } else {
+    next();
+  }
 });
 
 export default router;

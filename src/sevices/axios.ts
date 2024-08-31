@@ -3,6 +3,7 @@ import { useOnline } from '@vueuse/core';
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost',
+  withCredentials: true,
 });
 
 const DEFAULT_MESSAGE =

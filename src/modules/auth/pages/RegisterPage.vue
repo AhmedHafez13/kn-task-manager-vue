@@ -1,12 +1,69 @@
 <script setup lang="ts">
+import STORAGE_KEYS from '@/const/storage-keys';
+import AuthService from '@/sevices/auth.service';
+import AppStorage from '@/utils/app.storage';
+import { useAppToaster } from '@/utils/app.toaster';
+import $v from '@/utils/app.validations';
+import { useRouter } from 'vue-router';
+import { VForm } from 'vuetify/components';
+
+const registerForm: Ref<VForm | null> = ref(null);
+const isLoading = ref(false);
+const isPasswordVisible = ref(false);
+
+const passwordConfirm = ref('');
 const form = ref({
   email: '',
   name: '',
   password: '',
-  passwordConfirm: '',
 });
 
-const isPasswordVisible = ref(false);
+// ----- Services ----- //
+
+const router = useRouter();
+const toaster = useAppToaster();
+
+// ----- Submit Form ----- //
+
+const onSubmit = async () => {
+  isLoading.value = true;
+  if (registerForm.value) {
+    try {
+      const { valid } = await registerForm.value.validate();
+
+      if (valid) {
+        const res = await AuthService.register(form.value);
+        if (res.user) {
+          AppStorage.setData(STORAGE_KEYS.USER, res.user);
+          router.push({ name: 'tasks' });
+        }
+      }
+    } catch (error) {
+      toaster.error(error);
+    }
+  }
+  isLoading.value = false;
+};
+
+// ----- Validation Rules ----- //
+const validationRules = computed(() => ({
+  email: [
+    (v: string) => $v.required(v) || 'Email is required',
+    (v: string) => $v.isEmail(v) || 'Not a valid email',
+  ],
+  name: [
+    (v: string) => $v.required(v) || 'Name is required',
+    (v: string) => $v.maxLength(v, 64) || 'Name is too long',
+  ],
+  password: [
+    (v: string) => $v.required(v) || 'Password is required',
+    (v: string) => $v.minLength(v, 6) || 'Password is too short',
+  ],
+  confirmPassword: [
+    (v: string) => $v.required(v) || 'Confirm password is required',
+    (v: string) => $v.equals(v, form.value.password) || 'Does not match password',
+  ],
+}));
 </script>
 
 <template>
@@ -19,20 +76,36 @@ const isPasswordVisible = ref(false);
       </VCardText>
 
       <VCardText>
-        <VForm @submit.prevent="() => {}">
+        <VForm
+          ref="registerForm"
+          @submit.prevent="onSubmit"
+          validate-on="invalid-input"
+          :disabled="isLoading"
+        >
           <VRow>
             <VCol cols="12">
-              <VTextField v-model="form.email" label="Email" type="email" />
+              <VTextField
+                v-model="form.email"
+                label="Email"
+                type="email"
+                :rules="validationRules.email"
+              />
             </VCol>
 
             <VCol cols="12">
-              <VTextField v-model="form.name" label="Name" type="text" />
+              <VTextField
+                v-model="form.name"
+                label="Name"
+                type="text"
+                :rules="validationRules.name"
+              />
             </VCol>
 
             <VCol cols="12">
               <VTextField
                 v-model="form.password"
                 label="Password"
+                :rules="validationRules.password"
                 :type="isPasswordVisible ? 'text' : 'password'"
                 :append-inner-icon="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                 @click:append-inner="isPasswordVisible = !isPasswordVisible"
@@ -41,8 +114,9 @@ const isPasswordVisible = ref(false);
 
             <VCol>
               <VTextField
-                v-model="form.passwordConfirm"
+                v-model="passwordConfirm"
                 label="Password Confirm"
+                :rules="validationRules.confirmPassword"
                 :type="isPasswordVisible ? 'text' : 'password'"
                 :append-inner-icon="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                 @click:append-inner="isPasswordVisible = !isPasswordVisible"
@@ -50,7 +124,15 @@ const isPasswordVisible = ref(false);
             </VCol>
 
             <!-- submit button -->
-            <VBtn block type="submit" to="/" class="my-6">Register</VBtn>
+            <VBtn
+              block
+              type="submit"
+              class="my-6"
+              color="primary"
+              text="Register"
+              :loading="isLoading"
+              :disabled="isLoading"
+            />
 
             <!-- create account -->
             <VCol cols="12" class="text-center text-base">
