@@ -22,6 +22,8 @@
   "author": "Ahmed Hafez",
   "dependencies": {
     "@mdi/font": "7.4.47",
+    "@vueuse/core": "^11.0.3",
+    "axios": "^1.7.6",
     "core-js": "^3.37.1",
     "roboto-fontface": "*",
     "vue": "^3.4.31",
