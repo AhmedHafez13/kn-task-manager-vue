@@ -14,7 +14,7 @@ const items = [
 </script>
 
 <template>
-  <v-footer height="40" app>
+  <v-footer height="40" app style="width: 100%">
     <a
       v-for="item in items"
       :key="item.title"

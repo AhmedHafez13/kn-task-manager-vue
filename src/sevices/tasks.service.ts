@@ -1,9 +1,10 @@
+import { Task } from '@/modules/tasks/tasks.types';
 import axios from './axios';
 
 const BASE_PATH = '/api';
 
 export default class TasksService {
-  static getTasks(page: number) {
+  static getTasks(page: number): Promise<{ tasks: Task[] }> {
     return axios.get(BASE_PATH + `/tasks?page=${page}`);
   }
 
@@ -20,7 +21,7 @@ export default class TasksService {
   }
 
   static markTaskCompleted(taskId: number, completed: boolean) {
-    return axios.put(BASE_PATH + `/tasks/${taskId}`, { completed });
+    return axios.put(BASE_PATH + `/tasks/${taskId}/mark-completed`, { completed });
   }
 
   static DeleteTask(taskId: number) {
