@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { useOnline } from '@vueuse/core';
+import AppStorage from '@/utils/app.storage';
+import STORAGE_KEYS from '@/const/storage-keys';
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost',
@@ -18,7 +20,10 @@ instance.interceptors.response.use(
   (error: AxiosError) => {
     let message = OFFLINE_MESSAGE;
 
-    if (error.response && error.response.data) {
+    if (error.response && error.response.status === 401) {
+      AppStorage.removeData(STORAGE_KEYS.USER);
+      window.location.href = '/login';
+    } else if (error.response && error.response.data) {
       const data = error.response.data as any;
       message = data.message || data.error;
     } else if (!useOnline().value) {
